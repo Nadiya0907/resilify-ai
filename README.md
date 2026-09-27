@@ -60,12 +60,3 @@ npm run dev
 
 ---
 
-## Demonstration Script for Hackathon Judges (60-Second WOW Flow)
-
-1. Open `http://localhost:5173`. Point out the **Hindsight Status Badge** showing `sre-incidents-bank`.
-2. Under **Incident Simulation Engine**, click **Trigger Scenario** on *"Flash Sale Spike: Connection Pool Exhaustion"*.
-3. Show the side-by-side comparison:
-   - **Left**: Stateless AI giving vague advice (*"check network, scale pods"*).
-   - **Right**: Resilify AI showing **96% Hindsight Match** with historical Incident `#INC-2024-8841`.
-4. Click **Execute Runbook: RB-PAY-04**. Watch the system resolve the outage, scale pool connections, and automatically execute `hindsight.retain()` to record the resolution into memory!
-5. Open the **Hindsight Memory Inspector** to show live vector recall queries and bank statistics.
