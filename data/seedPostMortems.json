@@ -1,0 +1,86 @@
+[
+  {
+    "id": "INC-2024-8841",
+    "service": "payment-gateway",
+    "severity": "CRITICAL",
+    "title": "HikariCP Connection Pool Exhaustion under Flash Sale Concurrency",
+    "symptoms": "504 Gateway Timeout on POST /api/v1/charge, spikes in active DB pool connection metrics (100% capacity), HTTP 500 error rate > 45%.",
+    "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+    "runbookExecuted": "RB-PAY-04: Emergency connection pool scale & socket timeout patch",
+    "resolutionSteps": [
+      "Bumped HikariCP maximumPoolSize from 20 to 150 via Helm environment config.",
+      "Applied 3000ms read timeout on downstream Stripe HTTP client calls to release pooled connections quickly.",
+      "Flushed transient deadlock keys in Redis cluster."
+    ],
+    "learnedBestPractice": "Never perform synchronous external HTTP calls while holding an open database transaction lock. Set explicit HTTP client connection & read timeouts.",
+    "mttrMinutes": 4,
+    "timestamp": "2026-08-14T10:22:00Z"
+  },
+  {
+    "id": "INC-2024-7302",
+    "service": "auth-service",
+    "severity": "HIGH",
+    "title": "Node.js Heap Memory Leak in RS256 JWT Key Cache",
+    "symptoms": "auth-service pod restart loop (OOMKilled exit code 137), RSS memory growing linearly by 85MB/min under high auth token verification volume.",
+    "rootCause": "JWKS key cache map in Auth0 verification middleware used un-capped key string keys without TTL eviction, causing heap accumulation on every token refresh.",
+    "runbookExecuted": "RB-AUTH-09: Hot-reload LRU cache patch & rolling restart",
+    "resolutionSteps": [
+      "Replaced standard JavaScript Object key cache with quick-lru capped at 1000 entries.",
+      "Issued rolling restart across auth-service deployment (`kubectl rollout restart deployment/auth-service`).",
+      "Increased container memory limits from 512Mi to 1Gi as temporary buffer."
+    ],
+    "learnedBestPractice": "All in-memory caches in microservices MUST have strict size bounds and TTL eviction to prevent RSS memory leak OOMKilled crashes.",
+    "mttrMinutes": 6,
+    "timestamp": "2026-08-28T14:15:00Z"
+  },
+  {
+    "id": "INC-2024-6119",
+    "service": "redis-cluster",
+    "severity": "HIGH",
+    "title": "Redis Cache Stampede & Thundering Herd on Product Catalog Key",
+    "symptoms": "Database CPU utilization spiked to 99%, microservice latency degraded from 12ms to 4800ms following scheduled cache key expiration.",
+    "rootCause": "Hot cache key 'cat:homepage:v2' expired at top of the hour. 5,000 concurrent client threads simultaneously missed cache and hammered primary PostgreSQL DB instance.",
+    "runbookExecuted": "RB-REDIS-02: Mutex lock caching & probabilistic early expiration",
+    "resolutionSteps": [
+      "Enabled single-flight / mutex lock pattern on catalog service cache miss fallback.",
+      "Re-populated hot cache key manually using redis-cli with background worker script.",
+      "Implemented randomized jitter (±300s) on key expiration TTLs."
+    ],
+    "learnedBestPractice": "Prevent thundering herd by using single-flight request coalescing for DB queries and applying TTL jitter to popular cache keys.",
+    "mttrMinutes": 5,
+    "timestamp": "2026-09-02T18:40:00Z"
+  },
+  {
+    "id": "INC-2024-9104",
+    "service": "db-primary",
+    "severity": "CRITICAL",
+    "title": "Autovacuum Lock Contention & Transaction ID Mappings Spike",
+    "symptoms": "PostgreSQL Write-Ahead Logging (WAL) disk space 92% full, transaction ID wraparound warning alerts, blocking locks on user_sessions table.",
+    "rootCause": "Long-running analytics query in background reporting worker held open transaction snapshot for over 6 hours, preventing autovacuum from cleaning dead tuples.",
+    "runbookExecuted": "RB-DB-07: Cancel idle transactions & trigger targeted vacuum analyze",
+    "resolutionSteps": [
+      "Terminated blocking analytics query PID using `SELECT pg_cancel_backend(pid)`.",
+      "Ran manual `VACUUM ANALYZE VERBOSE user_sessions;`.",
+      "Configured `statement_timeout = 30s` on default analytics reporting role."
+    ],
+    "learnedBestPractice": "Always enforce statement_timeout on non-OLTP analytical database connections to prevent autovacuum freeze and transaction ID wraparound.",
+    "mttrMinutes": 8,
+    "timestamp": "2026-09-15T09:10:00Z"
+  },
+  {
+    "id": "INC-2024-5512",
+    "service": "payment-gateway",
+    "severity": "MEDIUM",
+    "title": "Stripe Webhook Signature Verification Failures due to Proxy Header Truncation",
+    "symptoms": "Payment status stuck in 'PENDING', 400 Bad Request responses on incoming webhook notifications from Stripe endpoint.",
+    "rootCause": "NGINX ingress controller header buffer size (4k) truncated long `Stripe-Signature` headers during TLS cipher renegotiation.",
+    "runbookExecuted": "RB-PAY-12: Ingress buffer size override & webhook retry trigger",
+    "resolutionSteps": [
+      "Updated NGINX ingress annotation: `nginx.ingress.kubernetes.io/proxy-buffer-size: '16k'`.",
+      "Triggered Stripe API event resend CLI command to replay missed webhook payloads."
+    ],
+    "learnedBestPractice": "Configure ingress proxy buffer sizes to at least 16k when receiving cryptographically signed webhook headers from third-party APIs.",
+    "mttrMinutes": 3,
+    "timestamp": "2026-09-20T11:05:00Z"
+  }
+]
