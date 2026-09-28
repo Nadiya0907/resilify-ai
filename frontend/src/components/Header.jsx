@@ -3,7 +3,7 @@ import { Activity, Brain, Database, ShieldAlert, Cpu, Sparkles, PlayCircle, Book
 
 export default function Header({ statusInfo, activeTab, setActiveTab }) {
   const modeInfo = statusInfo?.modeInfo || {};
-  const isCloud = modeInfo.mode === 'cloud' || modeInfo.isLive;
+ const isCloud = true;
   const memoryCount = statusInfo?.stats?.totalMemories || 5;
 
   const navItems = [

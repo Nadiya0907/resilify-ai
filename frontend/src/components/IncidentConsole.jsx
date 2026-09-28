@@ -140,7 +140,9 @@ export default function IncidentConsole({ incident, onExecuteRemediation, isExec
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Incident Triggered</span>
             <span className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
-              {new Date(incident.timestamp).toLocaleTimeString()}
+              {new Date(
+  incident.triggeredAt || incident.timestamp || Date.now()
+).toLocaleTimeString()}
             </span>
           </div>
         </div>

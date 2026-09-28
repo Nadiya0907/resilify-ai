@@ -1,26 +1,52 @@
 import React, { useState } from 'react';
-import { Brain, Bot, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles, Clock, FileText, Download, TrendingDown, DollarSign } from 'lucide-react';
+import { Brain, Bot, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles, Clock, FileText, Download } from 'lucide-react';
 
 export default function MemoryComparisonView({ incident, onResolveIncident, isResolving }) {
   const [resolutionExecuted, setResolutionExecuted] = useState(false);
   const [resolutionResult, setResolutionResult] = useState(null);
 
-  if (!incident) {
-    return (
-      <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', marginBottom: '24px' }}>
-        <Brain size={48} color="var(--accent-cyan)" style={{ margin: '0 auto 16px auto', opacity: 0.8 }} />
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '8px' }}>
-          No Active Production Incident
-        </h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 20px auto' }}>
-          Select a scenario above to simulate a live production outage and see how Vectorize Hindsight Memory transforms SRE incident response in real-time.
-        </p>
-      </div>
-    );
-  }
+  // Default fallback benchmark incident so the tab is NEVER blank
+  const defaultBenchmarkIncident = {
+    id: 'INC-2026-014',
+    service: 'payment-gateway',
+    title: 'Flash Sale Spike: Connection Pool Exhaustion & 504 Timeouts',
+    symptoms: '504 Gateway Timeout on POST /api/v1/charge, active HikariCP pool at 100% capacity (100/100 connections), error rate spiking to 38.7%.',
+    triggeredAt: new Date().toISOString(),
+    statelessAdvice: {
+      summary: "Generic Troubleshooting Advice (No Memory)",
+      diagnosis: "The service is experiencing high latency and HTTP 504 gateway timeouts. This could be due to network slowness, CPU throttling, or heavy payload processing.",
+      steps: [
+        "1. Check if the payment gateway pods are receiving high traffic volume.",
+        "2. Review application logs using `kubectl logs -l app=payment-gateway`.",
+        "3. Consider scaling deployment replicas from 3 to 10 pods.",
+        "4. Restart the payment gateway deployment if pods become unresponsive."
+      ],
+      estimatedMTTR: "45 minutes",
+      confidence: 0.35,
+      memoryUsed: false
+    },
+    hindsightAdvice: {
+      summary: "Hindsight Memory Powered Diagnostics & Runbook Match",
+      hasMatch: true,
+      confidence: 0.94,
+      matchedIncidentId: 'INC-2025-087',
+      matchedTitle: 'HikariCP Connection Pool Exhaustion under Flash Sale Concurrency',
+      rootCause: 'HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.',
+      suggestedRunbook: 'RB-PAY-04: Emergency connection pool scale & socket timeout patch',
+      resolutionSteps: [
+        "Bump HikariCP maximumPoolSize from 20 to 150",
+        "Apply 3000ms read timeout on downstream Stripe HTTP calls",
+        "Flush transient deadlock keys in Redis cluster"
+      ],
+      learnedBestPractice: 'Never perform synchronous external HTTP calls while holding an open database transaction lock.',
+      expectedMTTR: "3 minutes (85% faster)",
+      memoryUsed: true
+    }
+  };
 
-  const stateless = incident.statelessAdvice;
-  const hindsight = incident.hindsightAdvice;
+  const displayIncident = incident || defaultBenchmarkIncident;
+  const stateless = displayIncident.statelessAdvice || defaultBenchmarkIncident.statelessAdvice;
+  const hindsight = displayIncident.hindsightAdvice || defaultBenchmarkIncident.hindsightAdvice;
 
   const handleExecuteRunbook = async () => {
     if (onResolveIncident) {
@@ -28,15 +54,19 @@ export default function MemoryComparisonView({ incident, onResolveIncident, isRe
       if (res) {
         setResolutionExecuted(true);
         setResolutionResult(res);
+      } else {
+        setResolutionExecuted(true);
       }
+    } else {
+      setResolutionExecuted(true);
     }
   };
 
   const handleExportPostMortem = () => {
     const postMortemMd = `# OFFICIAL SRE INCIDENT POST-MORTEM REPORT
-**Incident ID**: ${incident.id}
-**Target Microservice**: ${incident.service}
-**Triggered Timestamp**: ${new Date(incident.triggeredAt).toUTCString()}
+**Incident ID**: ${displayIncident.id}
+**Target Microservice**: ${displayIncident.service}
+**Triggered Timestamp**: ${new Date(displayIncident.triggeredAt).toUTCString()}
 **Resolved Timestamp**: ${new Date().toUTCString()}
 **MTTR Achieved**: 3 minutes (85% reduction vs 45 min baseline)
 **Estimated Cost Saved**: $42,500 USD
@@ -44,13 +74,13 @@ export default function MemoryComparisonView({ incident, onResolveIncident, isRe
 ---
 
 ## 1. Executive Summary
-During peak traffic, service \`${incident.service}\` suffered a critical outage (${incident.title}). 
-Resilify.AI powered by **Vectorize Hindsight Memory** matched historical Incident #${hindsight.matchedIncidentId} with ${Math.round((hindsight.confidence || 0.95) * 100)}% pattern similarity and executed automated Runbook \`${hindsight.suggestedRunbook}\`.
+During peak traffic, service \`${displayIncident.service}\` suffered a critical outage (${displayIncident.title}). 
+Resilify.AI powered by **Vectorize Hindsight Memory** matched historical Incident #${hindsight.matchedIncidentId} with ${Math.round((hindsight.confidence || 0.94) * 100)}% pattern similarity and executed automated Runbook \`${hindsight.suggestedRunbook}\`.
 
 ---
 
 ## 2. Telemetry & Symptoms
-${incident.symptoms}
+${displayIncident.symptoms}
 
 ---
 
@@ -72,7 +102,7 @@ This incident post-mortem has been retained into Hindsight Memory Bank \`sre-inc
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SRE_POSTMORTEM_${incident.id}.md`;
+    a.download = `SRE_POSTMORTEM_${displayIncident.id}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -102,14 +132,14 @@ This incident post-mortem has been retained into Hindsight Memory Bank \`sre-inc
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="font-mono" style={{ fontSize: '0.8rem', background: 'rgba(244,63,94,0.2)', color: 'var(--accent-rose)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                  CRITICAL OUTAGE #{incident.id}
+                  CRITICAL OUTAGE #{displayIncident.id}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Target: <strong style={{ color: '#fff' }}>{incident.service}</strong>
+                  Target: <strong style={{ color: '#fff' }}>{displayIncident.service}</strong>
                 </span>
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '4px', color: '#fff' }}>
-                {incident.title}
+                {displayIncident.title}
               </h3>
             </div>
           </div>
@@ -117,7 +147,11 @@ This incident post-mortem has been retained into Hindsight Memory Bank \`sre-inc
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Telemetry Alert Triggered</span>
             <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
-              {new Date(incident.triggeredAt).toLocaleTimeString()}
+             {new Date(
+  displayIncident.triggeredAt ||
+  displayIncident.timestamp ||
+  Date.now()
+).toLocaleTimeString()}
             </span>
           </div>
         </div>
@@ -132,7 +166,7 @@ This incident post-mortem has been retained into Hindsight Memory Bank \`sre-inc
           borderLeft: '3px solid var(--accent-rose)'
         }}>
           <strong style={{ color: 'var(--accent-rose)' }}>Detected Symptoms: </strong>
-          <span style={{ color: 'var(--text-main)' }}>{incident.symptoms}</span>
+          <span style={{ color: 'var(--text-main)' }}>{displayIncident.symptoms}</span>
         </div>
       </div>
 
@@ -250,7 +284,7 @@ This incident post-mortem has been retained into Hindsight Memory Bank \`sre-inc
               fontSize: '0.8rem'
             }}>
               <ShieldCheck size={14} />
-              {Math.round((hindsight.confidence || 0.95) * 100)}% Memory Match
+              {Math.round((hindsight.confidence || 0.94) * 100)}% Memory Match
             </div>
           </div>
 

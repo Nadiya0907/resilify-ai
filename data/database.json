@@ -1,5 +1,145 @@
 [
   {
+    "id": "INC-2026-11",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-11\n\n**Service**: Payment Gateway (`payment-gateway`)  \n**Severity**: CRITICAL  \n**Duration**: 3 minutes (2026-09-28T02:28:39.217Z to 2026-09-28T02:31:39.217Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `payment-gateway` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-6870, INC-2024-8841, INC-2026-86), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nHikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment payment-v2.8.1 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-11",
+      "service": "payment-gateway",
+      "title": "Payment Database Connection Exhaustion",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-28T02:31:39.217Z"
+    },
+    "createdAt": "2026-09-28T02:31:39.217Z"
+  },
+  {
+    "id": "INC-2026-86",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-86\n\n**Service**: Payment Gateway (`payment-gateway`)  \n**Severity**: CRITICAL  \n**Duration**: 3 minutes (2026-09-28T02:20:32.145Z to 2026-09-28T02:23:32.145Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `payment-gateway` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-6870, INC-2024-8841, INC-2026-16), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nHikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment payment-v2.8.1 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-86",
+      "service": "payment-gateway",
+      "title": "Payment Database Connection Exhaustion",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-28T02:23:32.146Z"
+    },
+    "createdAt": "2026-09-28T02:23:32.146Z"
+  },
+  {
+    "id": "INC-2026-16",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-16\n\n**Service**: Payment Gateway (`payment-gateway`)  \n**Severity**: CRITICAL  \n**Duration**: 3 minutes (2026-09-27T17:51:19.838Z to 2026-09-27T17:54:19.838Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `payment-gateway` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-6870, INC-2024-8841, INC-2026-76), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nHikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment payment-v2.8.1 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-16",
+      "service": "payment-gateway",
+      "title": "Payment Database Connection Exhaustion",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-27T17:54:19.838Z"
+    },
+    "createdAt": "2026-09-27T17:54:19.838Z"
+  },
+  {
+    "id": "INC-2026-76",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-76\n\n**Service**: Payment Gateway (`payment-gateway`)  \n**Severity**: CRITICAL  \n**Duration**: 3 minutes (2026-09-27T17:50:33.733Z to 2026-09-27T17:53:33.733Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `payment-gateway` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-6870, INC-2024-8841, INC-2026-43), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nHikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment payment-v2.8.1 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-76",
+      "service": "payment-gateway",
+      "title": "Payment Database Connection Exhaustion",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-27T17:53:33.733Z"
+    },
+    "createdAt": "2026-09-27T17:53:33.733Z"
+  },
+  {
+    "id": "INC-2026-43",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-43\n\n**Service**: Auth & JWT Service (`auth-service`)  \n**Severity**: HIGH  \n**Duration**: 3 minutes (2026-09-27T16:48:58.836Z to 2026-09-27T16:51:58.836Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `auth-service` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-2024-7302, INC-2026-50, INC-2026-10), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nJWKS key cache map in Auth0 verification middleware used un-capped key string keys without TTL eviction, causing heap accumulation on every token refresh.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment auth-v1.4.0 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-43",
+      "service": "auth-service",
+      "title": "Authentication Service Memory Leak",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "JWKS key cache map in Auth0 verification middleware used un-capped key string keys without TTL eviction, causing heap accumulation on every token refresh.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-27T16:51:58.842Z"
+    },
+    "createdAt": "2026-09-27T16:51:58.842Z"
+  },
+  {
+    "id": "INC-2026-50",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-50\n\n**Service**: Auth & JWT Service (`auth-service`)  \n**Severity**: HIGH  \n**Duration**: 3 minutes (2026-09-27T12:48:24.537Z to 2026-09-27T12:51:24.537Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `auth-service` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-2024-7302, INC-2026-10, INC-6870), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nJWKS key cache map in Auth0 verification middleware used un-capped key string keys without TTL eviction, causing heap accumulation on every token refresh.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment auth-v1.4.0 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-50",
+      "service": "auth-service",
+      "title": "Authentication Service Memory Leak",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "JWKS key cache map in Auth0 verification middleware used un-capped key string keys without TTL eviction, causing heap accumulation on every token refresh.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-27T12:51:24.537Z"
+    },
+    "createdAt": "2026-09-27T12:51:24.537Z"
+  },
+  {
+    "id": "INC-2026-10",
+    "content": "# INCIDENT POST-MORTEM: INC-2026-10\n\n**Service**: Payment Gateway (`payment-gateway`)  \n**Severity**: CRITICAL  \n**Duration**: 3 minutes (2026-09-27T12:47:14.938Z to 2026-09-27T12:50:14.938Z)  \n**Verification**: RECOVERY VERIFIED  \n\n---\n\n## 1. Executive Summary & Impact\nDuring peak traffic, service `payment-gateway` suffered a critical outage. Resilify.AI identified the anomaly, recalled historical Hindsight post-mortems (INC-6870, INC-2024-8841, INC-2024-7302), and executed Runbook `RB-PAY-04` following engineer approval.\n\n## 2. Root Cause Analysis\nHikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\n\n## 3. Contributing Factors\n- HikariCP max connection pool size was capped at 20 default connections\n- Downstream Stripe API calls held open DB transaction locks without read timeouts\n- Deployment payment-v2.8.1 published prior to flash sale traffic spike\n\n## 4. Remediation Executed\n- **Runbook**: Payment Database Connection & Pool Recovery (`RB-PAY-04`)\n- **Outcome**: Service recovered successfully in 3 minutes.\n\n## 5. Prevention Recommendations\n- Add connection pool saturation alert rule at 85% capacity threshold\n- Enforce 3000ms read timeouts on all external HTTP integration clients\n- Validate connection pool parameters in CI/CD pipeline prior to production deployment\n- Implement single-flight request coalescing for high-volume database queries\n\n---\n*Generated automatically by Resilify.AI SRE Platform & Retained into Vectorize Hindsight Memory.*\n",
+    "metadata": {
+      "id": "INC-2026-10",
+      "service": "payment-gateway",
+      "title": "Payment Database Connection Exhaustion",
+      "runbook": "RB-PAY-04",
+      "mttr": 3,
+      "rootCause": "HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.",
+      "resolutionSteps": [
+        "1. Scale HikariCP maximumPoolSize from 20 to 150 via container environment override",
+        "2. Apply 3000ms read timeout on downstream Stripe/PayPal payment gateway calls",
+        "3. Issue graceful rolling restart across payment-gateway microservice pods",
+        "4. Verify database connection pool drop & monitor P99 latency"
+      ],
+      "timestamp": "2026-09-27T12:50:14.939Z"
+    },
+    "createdAt": "2026-09-27T12:50:14.939Z"
+  },
+  {
     "id": "INC-6870",
     "content": "Resolved Incident ID: INC-6870\nService: payment-gateway\nTitle: Flash Sale Spike: Connection Pool Exhaustion & 504 Timeouts\nSymptoms: 504 Gateway Timeout on POST /api/v1/charge, active HikariCP pool at 100% capacity (20/20 connections), error rate spiking to 48%.\nRoot Cause: HikariCP connection pool max size was capped at 20 default connections. Under high concurrent checkout requests, database connections were held during external Stripe API calls without timeouts, starving pool threads.\nRunbook Applied: RB-PAY-04: Emergency connection pool scale & socket timeout patch\nResolution Notes: Applied Runbook: RB-PAY-04: Emergency connection pool scale & socket timeout patch",
     "metadata": {
